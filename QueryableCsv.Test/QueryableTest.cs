@@ -120,4 +120,11 @@ public class QueryableTest
         first.Should().Be(3);
         second.Should().BeEquivalentTo(_tom);
     }
+
+    [Test]
+    public void Indexed_where_query()
+    {
+        var actual = _queryable.Where((p, i) => i == 2).Single();
+        actual.Should().BeEquivalentTo(_john);
+    }
 }

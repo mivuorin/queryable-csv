@@ -12,15 +12,29 @@ internal class FilterVisitor : ExpressionVisitor
     {
         if (node.Method.DeclaringType == typeof(Queryable))
         {
-            // TODO Support indexed versions
             if (node.Method.Name == nameof(Queryable.Where))
             {
                 var source = node.Arguments[0];
 
                 var unary = (UnaryExpression)node.Arguments[1];
-                var lambda = (LambdaExpression)unary.Operand;
-
-                Filter = lambda.Compile();
+                var filter = (LambdaExpression)unary.Operand;
+                
+                // Convert filter function to indexed version if needed.
+                if (filter.Parameters.Count == 1)
+                {
+                    var obj = filter.Parameters[0];
+                    var index = Expression.Parameter(typeof(int), "i");
+                    
+                    var invoke = Expression.Invoke(filter, obj);
+                    var wrapped = Expression.Lambda(invoke, obj, index);
+                    
+                    FilterWithIndex = wrapped.Compile();
+                }
+                else
+                {
+                    
+                    FilterWithIndex = filter.Compile();
+                }
 
                 // Remove method call from expression tree eg. object.Where( ... ) -> objects
                 return source;
@@ -29,6 +43,7 @@ internal class FilterVisitor : ExpressionVisitor
 
         return base.VisitMethodCall(node);
     }
-    
-    public Delegate? Filter { get; set; }
+
+    // TODO Possible to strongly type filter delegate?
+    public Delegate? FilterWithIndex { get; set; }
 }

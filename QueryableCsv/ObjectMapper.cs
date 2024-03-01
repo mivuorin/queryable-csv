@@ -26,10 +26,11 @@ internal class ObjectMapper
         var collectionType = typeof(List<>).MakeGenericType(_objectType);
         var collection = (IList)Activator.CreateInstance(collectionType)!;
 
+        var index = 0;
         while (reader.ReadLine() is string line)
         {
             var columns = line.Split(_separator);
-            var instance = Activator.CreateInstance(_objectType);
+            var instance = Activator.CreateInstance(_objectType) ?? throw new InvalidOperationException();
 
             foreach (var (property, columnAttribute) in _propertyColumnMappings)
             {
@@ -40,10 +41,9 @@ internal class ObjectMapper
                 property.SetValue(instance, value);
             }
 
-            if (visitor.Filter != null)
+            if (visitor.FilterWithIndex is not null)
             {
-                // TODO Is it possible to add type safety? Cannot apply Linq operators can oly be applied to IEnumerable<T>. 
-                if ((bool)visitor.Filter.DynamicInvoke(instance)!)
+                if ((bool)visitor.FilterWithIndex.DynamicInvoke(instance, index)!)
                 {
                     collection.Add(instance);
                 }
@@ -52,6 +52,8 @@ internal class ObjectMapper
             {
                 collection.Add(instance);
             }
+
+            index++;
         }
 
         return collection;
