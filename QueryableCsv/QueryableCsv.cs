@@ -8,22 +8,24 @@ namespace QueryableCsv;
 // TODO Write documentation and usage example.
 public class QueryableCsv<T> : IQueryable<T>
 {
+    private const char DefaultSeparator = ',';
     private readonly CsvQueryProvider _provider;
 
-    // TODO Maybe move to different factory etc. eg. CsvQuery.File<T>("asdasd")
-    public QueryableCsv(string path)
+    // TODO Move constructors into separate factory?
+
+    public QueryableCsv(TextReader reader, char separator = DefaultSeparator)
     {
         var columnType = typeof(T);
-        _provider = new CsvQueryProvider(path, new ObjectMapper(columnType));
+        _provider = new CsvQueryProvider(reader, new ObjectMapper(columnType, separator));
 
         // Linq requires that expression tree's root node to be IQueryable<'T> implementation.
         Expression = Expression.Constant(this);
     }
 
-    public QueryableCsv(TextReader reader)
+    public QueryableCsv(string path, char separator = DefaultSeparator)
     {
         var columnType = typeof(T);
-        _provider = new CsvQueryProvider(reader, new ObjectMapper(columnType));
+        _provider = new CsvQueryProvider(path, new ObjectMapper(columnType, separator));
 
         // Linq requires that expression tree's root node to be IQueryable<'T> implementation.
         Expression = Expression.Constant(this);

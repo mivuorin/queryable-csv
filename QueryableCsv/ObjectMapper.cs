@@ -9,25 +9,26 @@ internal class ObjectMapper
 {
     private readonly Type _objectType;
     private readonly IEnumerable<(PropertyInfo p, CsvColumnAttribute)> _propertyColumnMappings;
+    private readonly char _separator;
 
-    public ObjectMapper(Type objectType)
+    internal ObjectMapper(Type objectType, char separator)
     {
         _objectType = objectType;
+        _separator = separator;
         _propertyColumnMappings = _objectType.GetProperties()
             .Where(p => p.GetCustomAttributes<CsvColumnAttribute>().Any())
             .Select(p => (p, p.GetCustomAttributes<CsvColumnAttribute>().Single()));
     }
 
-    public IEnumerable ReadFile(FilterVisitor visitor, TextReader reader)
+    internal IEnumerable ReadFile(FilterVisitor visitor, TextReader reader)
     {
         // TODO Generic collection might not be needed. Depends on how to convert this into IEnumerator
         var collectionType = typeof(List<>).MakeGenericType(_objectType);
         var collection = (IList)Activator.CreateInstance(collectionType)!;
-        
+
         while (reader.ReadLine() is string line)
         {
-            // TODO Configurable line delimiter
-            var columns = line.Split(',');
+            var columns = line.Split(_separator);
             var instance = Activator.CreateInstance(_objectType);
 
             foreach (var (property, columnAttribute) in _propertyColumnMappings)
@@ -58,21 +59,8 @@ internal class ObjectMapper
 
     private static Func<string, object> Parser(Type type)
     {
+        // TODO Clean up parser
         var converter = TypeDescriptor.GetConverter(type);
         return input => converter.ConvertFromString(null, CultureInfo.InvariantCulture, input);
-        
-        // TODO Separate parser strategy into own instance and interface
-        var parsers = new Dictionary<Type, Func<string, object>>
-        {
-            { typeof(int), input => int.Parse(input) },
-            { typeof(string), input => input },
-            {
-                typeof(DateTime),
-                input => DateTime.ParseExact(input, "O", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
-                    .ToUniversalTime()
-            }
-        };
-
-        return parsers[type];
     }
 }

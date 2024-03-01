@@ -73,8 +73,6 @@ internal class CsvQueryProvider : IQueryProvider
         var queryableVisitor = new AsQueryableVisitor(asQueryable);
         var enumerableExpression = queryableVisitor.Visit(filtered);
 
-        // Probably need to remove filters from tree so they are not executed twice?
-        // Maybe this works???
         return asQueryable.Provider.Execute<TResult>(enumerableExpression);
     }
 

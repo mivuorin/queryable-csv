@@ -5,8 +5,8 @@ Revisited my old expression tree study which implements Linq to CSV files.
 ## TODO
 
 * Improve mapping to support header row and name based mapping instead of indexes
-* Use TypeDescriptor.GetConverter(type) for string parsing?
 * Configurable column separator
+* Escape character, probably needs to be configurable
 
 ## How to use?
 
